@@ -1,0 +1,14 @@
+#ifndef DROIDBACKUP_VERSION_H_
+#define DROIDBACKUP_VERSION_H_
+
+// clang-format off
+
+constexpr auto DroidBackupMajorVersion = @DROIDBACKUP_VERSION_MAJOR@;
+constexpr auto DroidBackupMinorVersion = @DROIDBACKUP_VERSION_MINOR@;
+constexpr auto DroidBackupPatchVersion = @DROIDBACKUP_VERSION_PATCH@;
+
+constexpr auto DroidBackupVersion = "@DROIDBACKUP_VERSION@";
+
+// clang-format on
+
+#endif  // DROIDBACKUP_VERSION_H_

@@ -1,0 +1,32 @@
+cmake_minimum_required(VERSION 3.20)
+
+# specify the C++ standard
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+### Project Metadata
+set(DROIDBACKUP_PROJECT_NAME        "droidbackup")
+set(DROIDBACKUP_PROJECT_DESCRIPTION "Convert Android Backup to GZ format")
+set(DROIDBACKUP_AUTHOR_DOMAIN       "https://www.sukesh.me")
+set(DROIDBACKUP_VERSION_MAJOR       "0")
+set(DROIDBACKUP_VERSION_MINOR       "0")
+set(DROIDBACKUP_VERSION_PATCH       "1")
+set(DROIDBACKUP_VERSION             "${DROIDBACKUP_VERSION_MAJOR}.${DROIDBACKUP_VERSION_MINOR}.${DROIDBACKUP_VERSION_PATCH}")
+set(DROIDBACKUP_NAME_VERSION        "${DROIDBACKUP_PROJECT_NAME} v${DROIDBACKUP_VERSION} (${DROIDBACKUP_VERSION_REVISION})")
+
+### Declare Project
+project(${DROIDBACKUP_PROJECT_NAME})
+
+set(DROIDBACKUP_SRC_DIR ${PROJECT_SOURCE_DIR}/src)
+set(DROIDBACKUP_INC_DIR ${PROJECT_SOURCE_DIR}/include)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+add_subdirectory(extern/cxxopts)
+add_subdirectory(src)
+
+configure_file(
+        "${PROJECT_SOURCE_DIR}/version.hpp.in"
+        "${PROJECT_BINARY_DIR}/version.hpp")
