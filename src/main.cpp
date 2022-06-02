@@ -43,8 +43,8 @@ void parse(int argc, const char* argv[])
       cxxopts::Options options("droidbackup", "Convert Android Backup to GZ format");
 
       options.add_options()
-            ("p,password", "Encryption Password", cxxopts::value<string>())
             ("f,filename", "Backup Filename", cxxopts::value<std::string>(), "FILE")
+            ("p,password", "Encryption Password", cxxopts::value<string>())
             ("h,help", "Print usage");
 
       auto result = options.parse(argc, argv);
@@ -68,7 +68,6 @@ void parse(int argc, const char* argv[])
             filename= result["filename"].as<std::string>();
             cout << "Filename: " << filename << endl;
       }
-
    }
    catch (const cxxopts::OptionException& e)
    {
@@ -79,8 +78,6 @@ void parse(int argc, const char* argv[])
 
 int main(int argc, const char* argv[])
 {
-      
-
       cout << "Android Backup" << endl;
       cout << "Version: " << DroidBackupVersion << endl << endl;
 

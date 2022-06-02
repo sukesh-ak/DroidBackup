@@ -1,5 +1,7 @@
 # DROID BACKUP
 ***Convert Android Backup to GZ format. Also Decrypts if encryption exist.***
+
+
 #### Compile
 use CMAKE
 ```
@@ -7,6 +9,6 @@ use CMAKE
 git submodule update --init --recursive
 
 # On Linux 
-mkdir build && cd build
 sudo apt update && sudo apt install cmake
+mkdir build && cd build
 ```
