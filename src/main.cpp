@@ -147,8 +147,12 @@ int main(int argc, const char* argv[])
             return EXIT_FAILURE;
       }
 
+      std::cerr << "Converting backup file...";
+      std::cerr.flush();
       if (ab->ConvertToGz())
-            std::cerr << "Success" <<endl;
+            std::cerr << "\rConversion Completed!     " <<endl;
+      else
+            std::cerr << "\rConversion Failed!        " <<endl;
 
   return 0;
 }
