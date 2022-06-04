@@ -6,11 +6,15 @@
 */
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include <cxxopts.hpp>
 
+#include "abackup.hpp"
 #include "version.hpp"
 
 using namespace std;
+
+namespace fs = std::filesystem;
 
 #define RESET   "\033[0m"
 #define BLACK   "\033[30m"      /* Black */
@@ -23,27 +27,7 @@ using namespace std;
 #define WHITE   "\033[37m"      /* White */
 #define BOLDBLACK   "\033[1m\033[30m"      /* Bold Black */
 
-// gz header 31 139 8 0 0 0 0 0
-#define GZ_HEADER "\x1f\x8b\x08\x00\x00\x00\x00\x00"
-#define GZ_HEADER_SIZE 8
-
-std::string bfilename;
-
-std::vector<std::string> split(const std::string& s, char seperator)
-{
-    std::vector<std::string> output;
-    std::string::size_type prev_pos = 0, pos = 0;
-
-    while((pos = s.find(seperator, pos)) != std::string::npos)
-    {
-        std::string substring( s.substr(prev_pos, pos-prev_pos) );
-        output.push_back(substring);
-        prev_pos = ++pos;
-    }
-
-    output.push_back(s.substr(prev_pos, pos-prev_pos)); // Last word
-    return output;
-}
+abackup *ab;
 
 void AppInfo()
 {
@@ -86,6 +70,7 @@ void parse(int argc, const char* argv[])
       options.add_options()
             ("f,filename", "Backup Filename", cxxopts::value<std::string>()->default_value("backup.ab"),"FILE")
             ("p,password", "Encryption Password", cxxopts::value<string>(),"PASSWORD")
+            ("l,list","List .db files",cxxopts::value<std::string>(),"FOLDER")
             ("h,help", "Print usage");
 
       auto result = options.parse(argc, argv);
@@ -96,17 +81,26 @@ void parse(int argc, const char* argv[])
             exit(0);
       }
 
-      string password;
       if (result.count("p"))
       {
-            password = result["p"].as<string>();
-            std::cerr << "Password: " << password << endl;
+            ab->GzPassword = result["p"].as<string>();
+            std::cerr << "Password: " << ab->GzPassword << endl;
+      }
+
+      if (result.count("l"))
+      {
+            ab->dbFolder = result["l"].as<string>();
+            std::cerr << "List Folder: " << ab->dbFolder << endl;
+      }
+
+      if (result.count("p"))
+      {
+            ab->GzPassword = result["p"].as<string>();
+            std::cerr << "Password: " << ab->GzPassword << endl;
       }
 
       // If filename missing default is assumed
-      bfilename= result["f"].as<std::string>();
-      std::cerr << "Backup file : " << bfilename << endl;
-
+      ab->BackupFilename = result["f"].as<std::string>();
    }
    //cxxopts::OptionSpecException, cxxopts::OptionParseException
    catch (const cxxopts::OptionException& e)
@@ -119,103 +113,42 @@ void parse(int argc, const char* argv[])
 int main(int argc, const char* argv[])
 {
       AppInfo();
+      ab = new abackup();
+
       parse(argc, argv);
 
-
-      // Time to open the file
-      ifstream backup_file(bfilename,ios::in);
-
-      if (!backup_file.is_open())
+      if (!ab->dbFolder.empty())
       {
-            std::cerr << "Could not open backup file: " << bfilename << endl;
+            ab->ListOfDB();
+            return EXIT_SUCCESS;
+      }
+
+      std::cerr << "Backup file : " << ab->BackupFilename << endl;
+      if (!fs::exists(ab->BackupFilename))
+      {
+            std::cerr << "Could not find backup file: " << ab->BackupFilename << endl;
             return EXIT_FAILURE;
       }
 
-      // Read and process each line in the file
-      std::string line;
-      int linecnt = 1;
-      int hlength = 0;
-
-      bool IsBackup = false;
-      int version = 0;
-      bool IsCompressed = 0;
-      bool IsEncrypted = false;
-      string encryption = "none";
-
-      // Backup header check
-      while(std::getline(backup_file,line))
+      if (!ab->GetMetadata()) // error and unable to read file...
       {
-            if (linecnt>4) break;   // interested only in first 4 lines
-            // * ANDROID BACKUP
-            // * 5=version
-            // * 1=compression
-            // * none/AES-256=encryption
-            // * <content>
-            hlength += line.length()+1;   // 1 for \n
-            line = split(line,'\n')[0];
-
-            //std::cerr << linecnt << ". Header Length : " << line.length() << endl;
-
-            if ((linecnt == 1) && line.compare("ANDROID BACKUP")==0) IsBackup = true;
-            if (linecnt == 2) version = stoi(line);
-            if (linecnt == 3) IsCompressed = (stoi(line)==1)?true:false;
-            if (linecnt == 4) IsEncrypted = line.compare("none")?false:true;
-            if ((linecnt == 4) && IsEncrypted) encryption = line;
-            
-            linecnt++;
+            return EXIT_FAILURE;
       }
-      backup_file.close();
-      
-      std::cerr << "Header Length : " << hlength << endl;
 
-      std::cerr << "Valid Backup : " << (IsBackup?"Yes":"No") << endl;
-      std::cerr << "Version : " << version << endl;
-      std::cerr << "Compressed : " << (IsCompressed?"Yes":"No") << endl;
-      std::cerr << "Encryption : " << encryption << endl <<endl;
+      std::cerr << "Valid Backup : " << (ab->IsBackup?"Yes":"No") << endl;
+      std::cerr << "Version : " << ab->Version << endl;
+      std::cerr << "Compressed : " << (ab->IsCompressed?"Yes":"No") << endl;
+      std::cerr << "Encryption : " << ab->encryption << endl <<endl;
       // *******************************************************************
 
-      if (!IsCompressed)
+      if (!ab->IsCompressed)
       {
-            std::cerr << "Backup file '" << bfilename << "' is not compressed" << endl;
+            std::cerr << "Backup file '" << ab->BackupFilename << "' is not compressed" << endl;
             return EXIT_FAILURE;
       }
 
-      // Conversion routine
-      backup_file.open(bfilename,ios::binary);
-      
-      // get pointer to associated buffer object
-      std::filebuf* pbuf = backup_file.rdbuf();
-
-      // get file size using buffer's members
-      std::size_t size = pbuf->pubseekoff (0,backup_file.end);
-      size = size - hlength;
-
-      //std::cerr << "Buffer Size : " << size << endl;
-
-      // allocate memory to contain file data
-      char* buffer=new char[size];
-
-      backup_file.seekg(hlength, ios::beg);     // set stream cursor to skip headers      
-      backup_file.read(buffer,size);
-
-      backup_file.close();
-
-      ofstream gzfile("s.gz");
-
-      // Write GZ header
-      //std::cerr << "GZ Header Size : " << GZ_HEADER_SIZE << endl;
-      gzfile << std::hex << GZ_HEADER;;
-
-      // Write file content after moving the write pointer ahead
-      gzfile.seekp(GZ_HEADER_SIZE, ios::beg);
-      gzfile.write (buffer,size);
-
-      //gzfile.flush();
-      gzfile.close();
-
-      delete[] buffer;
-
-      std::cerr << endl;
+      if (ab->ConvertToGz())
+            std::cerr << "Success" <<endl;
 
   return 0;
 }
