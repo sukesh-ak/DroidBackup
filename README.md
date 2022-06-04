@@ -1,6 +1,7 @@
 # DROID BACKUP
-***Convert Android Backup to GZ format. Also Decrypts if encryption exist.***
-
+- [x] Convert Android Backup to GZ format. 
+- [x] List Sqlite .db files from the backup folder.
+- [ ] Decrypts if encrypted using password.
 
 ### Compile and Build using CMAKE
 ```
