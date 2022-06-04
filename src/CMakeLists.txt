@@ -9,5 +9,4 @@ target_include_directories(${DROIDBACKUP_PROJECT_NAME} PUBLIC
         ${DROIDBACKUP_INC_DIR}
         cxxopts abackup)
 
-target_link_libraries(${DROIDBACKUP_PROJECT_NAME} PUBLIC 
-        cxxopts)
+#target_link_libraries(${DROIDBACKUP_PROJECT_NAME} PUBLIC cxxopts)
