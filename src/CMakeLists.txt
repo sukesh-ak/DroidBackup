@@ -7,7 +7,7 @@ target_compile_features(${DROIDBACKUP_PROJECT_NAME} PUBLIC
 target_include_directories(${DROIDBACKUP_PROJECT_NAME} PUBLIC
         ${PROJECT_BINARY_DIR}
         ${DROIDBACKUP_INC_DIR}
-        cxxopts)
+        cxxopts abackup)
 
 target_link_libraries(${DROIDBACKUP_PROJECT_NAME} PUBLIC 
         cxxopts)
